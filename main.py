@@ -4,6 +4,12 @@ import numpy as np
 import sounddevice as sd
 from faster_whisper import WhisperModel
 
+import threading
+import pyperclip
+
+from hotkey import start_hotkey_listener
+from pynput.keyboard import Controller, Key
+
 # Audio configuration
 SAMPLE_RATE = 16000
 DURATION = 5  # seconds
@@ -55,9 +61,40 @@ def transcribe_audio(model, audio):
     return text
 
 
+keyboard_controller = Controller()
+recording_lock = threading.Lock()
+
+
+def dictate(model):
+    """Record, transcribe, and paste into the active application."""
+
+    if not recording_lock.acquire(blocking=False):
+        print("Already recording or transcribing.")
+        return
+
+    try:
+        audio = record_audio()
+        text = transcribe_audio(model, audio)
+
+        if text.strip():
+            pyperclip.copy(text)
+
+            # Paste the transcription using Cmd + V.
+            with keyboard_controller.pressed(Key.cmd):
+                keyboard_controller.press("v")
+                keyboard_controller.release("v")
+
+            print("Text pasted successfully!")
+
+    except Exception as error:
+        print(f"Dictation error: {error}")
+
+    finally:
+        recording_lock.release()
+
+
 def main():
     print("VoiceFlow macOS - Speech-to-Text")
-
     print("Loading Whisper model...")
 
     model = WhisperModel(
@@ -66,8 +103,14 @@ def main():
         compute_type="int8",
     )
 
-    audio = record_audio()
-    transcribe_audio(model, audio)
+    def on_hotkey():
+        threading.Thread(
+            target=dictate,
+            args=(model,),
+            daemon=True,
+        ).start()
+
+    start_hotkey_listener(on_hotkey)
 
 
 if __name__ == "__main__":
