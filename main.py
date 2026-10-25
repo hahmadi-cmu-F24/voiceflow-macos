@@ -154,13 +154,27 @@ class VoiceFlow:
             text = transcribe_audio(self.model, audio)
 
             if text:
-                pyperclip.copy(text)
+                # Save the user's existing clipboard text.
+                original_clipboard = pyperclip.paste()
 
-                with keyboard_controller.pressed(Key.cmd):
-                    keyboard_controller.press("v")
-                    keyboard_controller.release("v")
+                try:
+                    # Temporarily place the transcription on the clipboard.
+                    pyperclip.copy(text)
 
-                print("Text pasted successfully!")
+                    # Paste into the active application.
+                    with keyboard_controller.pressed(Key.cmd):
+                        keyboard_controller.press("v")
+                        keyboard_controller.release("v")
+
+                    # Give macOS time to process the paste operation.
+                    time.sleep(0.3)
+
+                    print("Text pasted successfully!")
+
+                finally:
+                    # Restore the user's previous clipboard text.
+                    pyperclip.copy(original_clipboard)
+                    print("Original clipboard restored.")
             else:
                 print("No speech detected.")
 
