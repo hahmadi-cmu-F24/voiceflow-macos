@@ -8,7 +8,7 @@ from faster_whisper import WhisperModel
 from pynput.keyboard import Controller, Key
 
 from hotkey import start_hotkey_listener
-
+from status_bar import VoiceFlowStatusBar
 
 SAMPLE_RATE = 16000
 MAX_RECORDING_SECONDS = 120
@@ -215,7 +215,19 @@ def main():
     app = VoiceFlow(model)
 
     print("\n🟢 READY")
-    start_hotkey_listener(app.toggle_recording)
+
+    # Run the keyboard listener in a background thread.
+    # This keeps the main thread available for the macOS UI.
+    hotkey_thread = threading.Thread(
+        target=start_hotkey_listener,
+        args=(app.toggle_recording,),
+        daemon=True,
+    )
+    hotkey_thread.start()
+
+    # Native macOS interfaces must run on the main thread.
+    status_bar = VoiceFlowStatusBar(app)
+    status_bar.run()
 
 
 if __name__ == "__main__":
