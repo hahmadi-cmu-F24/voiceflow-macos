@@ -51,11 +51,11 @@ class VoiceFlow:
         self.timer = None
 
     def audio_callback(self, indata, frames, time_info, status):
-        """Collect audio while the microphone is recording."""
-        if status:
-            print(f"Audio warning: {status}")
+        """Collect microphone audio and report recording problems."""
 
-        # Copy because sounddevice reuses its audio buffers.
+        if status:
+            print(f"Microphone warning: {status}")
+
         with self.lock:
             if self.state == "recording":
                 self.audio_chunks.append(indata.copy())
@@ -201,6 +201,41 @@ class VoiceFlow:
         else:
             print("Please wait. Still transcribing...")
 
+    def check_microphone(self):
+        """Check whether the recording stream is still active."""
+
+        with self.lock:
+            if self.state != "recording":
+                return
+
+            stream = self.stream
+
+        if stream is not None and not stream.active:
+            print("Microphone disconnected or recording stopped unexpectedly.")
+            self.stop_recording()
+
+    def shutdown(self):
+        """Stop recording and release microphone resources."""
+
+        with self.lock:
+            if self.timer is not None:
+                self.timer.cancel()
+                self.timer = None
+
+            self.state = "idle"
+
+            stream = self.stream
+            self.stream = None
+
+        if stream is not None:
+            try:
+                stream.stop()
+                stream.close()
+            except Exception as error:
+                print(f"Error closing microphone: {error}")
+
+        print("VoiceFlow shut down.")
+
 
 def main():
     print("VoiceFlow macOS - Speech-to-Text")
@@ -228,6 +263,7 @@ def main():
     # Native macOS interfaces must run on the main thread.
     status_bar = VoiceFlowStatusBar(app)
     status_bar.run()
+    print("VoiceFlow event loop exited normally.")
 
 
 if __name__ == "__main__":

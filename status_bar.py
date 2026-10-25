@@ -1,4 +1,5 @@
 import rumps
+from AppKit import NSApplication  # type: ignore[attr-defined]
 
 
 class VoiceFlowStatusBar(rumps.App):
@@ -8,7 +9,7 @@ class VoiceFlowStatusBar(rumps.App):
         super().__init__(
             name="VoiceFlow",
             title="🎙 Ready",
-            quit_button=None,
+            quit_button=None,  # type: ignore[arg-type]
         )
 
         self.voiceflow = voiceflow
@@ -26,6 +27,8 @@ class VoiceFlowStatusBar(rumps.App):
 
     def update_status(self, _):
         """Refresh the menu-bar indicator when the state changes."""
+        
+        self.voiceflow.check_microphone()
 
         with self.voiceflow.lock:
             current_state = self.voiceflow.state
@@ -45,5 +48,9 @@ class VoiceFlowStatusBar(rumps.App):
             self.title = "⏳ Transcribing"
 
     def quit_app(self, _):
-        """Close the menu-bar application."""
-        rumps.quit_application()
+        print("Shutting down VoiceFlow...")
+
+        self.status_timer.stop()
+        self.voiceflow.shutdown()
+
+        NSApplication.sharedApplication().stop_(None)
