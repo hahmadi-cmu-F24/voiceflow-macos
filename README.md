@@ -6,6 +6,14 @@ VoiceFlow lets users record speech using a global keyboard shortcut, transcribe 
 
 Inspired by the workflow of tools like Wispr Flow, this project explores building a fast, convenient, system-wide dictation experience on macOS.
 
+## Demo
+
+🎥 Watch VoiceFlow in action:
+
+https://youtu.be/zGb5RqzxxUo
+
+
+
 ## Features
 
 - **Local speech-to-text:** Uses Faster-Whisper for on-device transcription without sending recordings to a cloud transcription API.
