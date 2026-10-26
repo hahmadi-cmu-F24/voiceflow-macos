@@ -10,6 +10,8 @@ from pynput.keyboard import Controller, Key
 from hotkey import start_hotkey_listener
 from status_bar import VoiceFlowStatusBar
 
+from permissions import check_microphone_access, check_accessibility_access
+
 SAMPLE_RATE = 16000
 MAX_RECORDING_SECONDS = 120
 
@@ -239,6 +241,20 @@ class VoiceFlow:
 
 def main():
     print("VoiceFlow macOS - Speech-to-Text")
+
+    print("Checking microphone access...")
+
+    print("Checking Accessibility access...")
+
+    if not check_microphone_access():
+        print("VoiceFlow cannot start without a working microphone.")
+        return
+
+    if not check_accessibility_access():
+        print("VoiceFlow cannot start without Accessibility access.")
+        return
+
+    print("Microphone access confirmed.")
     print("Loading Whisper model...")
 
     model = WhisperModel(
